@@ -16,4 +16,4 @@ spec:
     name: consul
     version: 3.9.5
   values:
-    Replicas: 1
+    Replicas: 3
