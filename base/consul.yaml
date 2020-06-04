@@ -16,8 +16,4 @@ spec:
     name: consul
     version: 3.9.5
   values:
-    server:
-      enabled: true
-      image: null
-      replicas: 1
-      bootstrapExpect: 1 # Should <= replicas count
+    Replicas: 1
