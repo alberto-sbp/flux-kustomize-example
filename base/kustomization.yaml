@@ -6,3 +6,4 @@ resources:
 - podinfo-svc.yaml
 - demo-ns.yaml
 - metrics-server.yaml
+- consul.yaml
