@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: consul
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: consul
+  namespace: consul
+spec:
+  releaseName: consul
+  chart:
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    name: consul
+    version: 3.9.5
+  values:
+    server:
+      enabled: "-"
+      image: null
+      replicas: 1
+      bootstrapExpect: 1 # Should <= replicas count
