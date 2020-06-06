@@ -8,4 +8,4 @@ spec:
   chart:
     version: 3.9.4
   values:
-    Replicas: 5
+    Replicas: 3

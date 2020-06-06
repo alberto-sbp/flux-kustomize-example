@@ -15,5 +15,3 @@ spec:
     repository: https://kubernetes-charts.storage.googleapis.com/
     name: consul
     version: 3.9.5
-  values:
-    Replicas: 1
