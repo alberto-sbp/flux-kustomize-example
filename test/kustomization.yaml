@@ -3,5 +3,4 @@ kind: Kustomization
 bases:
 - ../base/
 patchesStrategicMerge:
-- replicas-patch.yaml
 - consul.yaml
