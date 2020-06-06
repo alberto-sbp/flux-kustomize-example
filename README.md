@@ -1,22 +1,32 @@
 # Using Flux with Kustomize
 
+
 ## Scenario and Goals
 
-The following example makes use of Flux's manifest-generation feature
+The following makes use of Flux's manifest-generation feature
 together with [Kustomize](https://github.com/kubernetes-sigs/kustomize) (and other such tooling, in theory).
 
-For this example we assume an scenario with two clusters, `staging` and
+For this project we consider an scenario with three clusters, `test`, `acceptance` and
 `production`. The goal is to levarage the full functionality of Flux (including
-automatic releases and supporting all `fluxctl` commands) to manage both
-clusters while minimizing duplicated declarations.
+automatic releases and supporting all `fluxctl` commands) to manage all
+clusters while minimizing multiple declarations.
 
-`staging` and `production` are almost identical, they both deploy a
-[`podinfo`](https://github.com/stefanprodan/k8s-podinfo) service. However, we
-have different requirments for each cluster:
+`test`, `staging` and `production` are almost identical.
 
-1. We want automated deployments for `staging` but not for `production` since we want a rubber-stamp 
-   every change. However, we want to still be able to make the changes with `fluxctl`.
-2. Since we expect `production` to have a higher load than `staging`, we want a higher replica range there.
+## Create a kind cluster
+
+```bash
+curl https://raw.githubusercontent.com/schubergphilis/k8s-team-ckad-training/master/cluster-config.yml --silent --output cluster-config.yml
+
+kind create cluster --config cluster-config.yml
+```
+
+Deploy calico overlay network (required for the network policy)
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/schubergphilis/k8s-team-ckad-training/master/calico.yml
+kubectl -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
+```
 
 ## How to run the example
 
@@ -34,26 +44,45 @@ that environment by passing flag `--git-path=staging` or `--git-path=production`
 5. As usual, you need to make sure that the ssh key shown by `fluxctl identity`
 is added to the your github fork.
 
+```bash
+
+kubectl create ns flux
+
+helm upgrade -i helm-operator fluxcd/helm-operator \
+--namespace flux \
+--set helm.versions=v3
+
+helm upgrade -i flux fluxcd/flux --wait \
+--namespace flux \
+--set manifestGeneration=true \
+--set git.path=test \
+--set syncGarbageCollection.enabled=true \
+--set git.url=git@github.com:alberto-sbp/flux-kustomize-example
+
+```
+
 ## How does this example work?
 
 ```
 ├── .flux.yaml
 ├── base
-│   ├── demo-ns.yaml
+│   ├── consul.yaml
 │   ├── kustomization.yaml
-│   ├── podinfo-dep.yaml
-│   ├── podinfo-hpa.yaml
-│   └── podinfo-svc.yaml
-├── staging
+├── test
 │   ├── flux-patch.yaml
 │   └── kustomization.yaml
+|   └── consul.yaml
+├── acceptance
+│   ├── flux-patch.yaml
+│   └── kustomization.yaml
+|   └── consul.yaml
 └── production
     ├── flux-patch.yaml
     ├── kustomization.yaml
-    └── replicas-patch.yaml
+    └── consul.yaml
 ```
 
-* `base` contains the base manifests. The resources to be deployed in 
+* `base` contains the base manifests. The resources to be deployed in `test`,
   `staging` and `production` are almost identical to the ones described here.
 * the `staging` and `production` directories make use of `base`, with a few patches, 
   to generate the final manifests for each environment:
@@ -69,11 +98,3 @@ is added to the your github fork.
   `kustomize build` and update policy annotations and container images by editing 
   `flux-patch.yaml`, which will implicitly applied to the manifests generated with
   `kustomize build`.
-
-## I want to know more
-
-For a more sophisticated example of using Flux with Kustomize for creating a
-multitenant cluster you can go to https://github.com/fluxcd/multi-tenancy .
-
-For more details about how `.flux.yaml` files work  you can read the
-[reference documentation](https://docs.fluxcd.io/en/latest/references/fluxyaml-config-files/)
